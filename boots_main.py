@@ -215,7 +215,7 @@ class CreateNeed(CommonPostHandler):
             return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
         # </end> input validation
 
-        ## create transaction to create user in datastore
+        ## create transaction to create need in datastore
         pma = {
             TaskArguments.s1t1_name: need_name,
         }
@@ -240,7 +240,7 @@ class CreateNeed(CommonPostHandler):
         if call_result['success'] != RC.success:
             return_msg += 'failed to add task queue function'
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
-        ##</end> create transaction to create user in datastore
+        ##</end> create transaction to create need in datastore
 
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
@@ -311,7 +311,7 @@ class AssignNeedToNeeder(CommonPostHandler):
         if special_requests:
             pma[TaskArguments.s2t4_special_requests] = special_requests
 
-        ## create transaction to create user in datastore
+        ## create transaction to assign need in datastore
         task_sequence = [{
             'name': TaskNames.s2t4,
             'PMA': pma,
@@ -331,7 +331,7 @@ class AssignNeedToNeeder(CommonPostHandler):
         if call_result['success'] != RC.success:
             return_msg += 'failed to add task queue function'
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
-        ##</end> create transaction to create user in datastore
+        ##</end> create transaction to assign need in datastore
 
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
@@ -603,7 +603,7 @@ class ModifyUserInformation(CommonPostHandler):
             TaskArguments.s2t10_location_cord_long: location_cord_long or '',
         }
 
-        ## create transaction to create user in datastore
+        ## create transaction to modify user in datastore
         task_sequence = [{
             'name': TaskNames.s2t10,
             'PMA': pma,
@@ -623,7 +623,82 @@ class ModifyUserInformation(CommonPostHandler):
         if call_result['success'] != RC.success:
             return_msg += 'failed to add task queue function'
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
-        ##</end> create transaction to create user in datastore
+        ##</end> create transaction to modify user in datastore
+
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+
+
+@app.route(Services.web_request.create_skill.url, methods=["OPTIONS", "POST"])
+@wrap_webapp_class(Services.web_request.create_skill.name)
+class CreateSkill(CommonPostHandler):
+    def process_request(self):
+        task_id = 'web-requests:CreateSkill:process_request'
+        debug_data = []
+        return_msg = task_id + ": "
+        transaction_user_uid = "1"
+
+        # input validation
+        skill_name = unicode(self.request.get(TaskArguments.s3t6_skill_name, ""))
+        skill_type = unicode(self.request.get(TaskArguments.s3t6_skill_type, ""))
+        description = unicode(self.request.get(TaskArguments.s3t6_description, "")) or None
+        certifications_needed = unicode(self.request.get(TaskArguments.s3t6_certifications_needed, "")) or None
+
+        call_result = self.ruleCheck([
+            [skill_name, DsP1.caretaker_skills._rule_skill_name],
+            [skill_type, DsP1.caretaker_skills._rule_skill_type],
+            [description, DsP1.caretaker_skills._rule_description],
+            [certifications_needed, DsP1.caretaker_skills._rule_certifications_needed],
+        ])
+
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += "input validation failed"
+            return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        query = DsP1.caretaker_skills.query(ndb.AND(
+            DsP1.caretaker_skills.skill_name == skill_name, DsP1.caretaker_skills.skill_type == skill_type
+        ))
+        call_result = DSF.kfetch(query)
+        if call_result['success'] != RC.success:
+            return_msg += "fetch of skills failed"
+            return {
+                'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        skills = call_result['fetch_result']
+        if skills:
+            return_msg += "The specified skill already exists."
+            return {
+                'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        # </end> input validation
+
+        # create transaction to create skill in datastore
+        pma = {
+            TaskArguments.s1t6_name: skill_name,
+            TaskArguments.s1t6_skill_type: skill_type,
+            TaskArguments.s1t6_description: description or '',
+            TaskArguments.s1t6_certs: certifications_needed or '',
+        }
+
+        task_sequence = [{
+            'name': TaskNames.s1t6,
+            'PMA': pma,
+        }]
+
+        try:
+            task_sequence = unicode(json.JSONEncoder().encode(task_sequence))
+        except Exception as e:
+            return_msg += "JSON encoding of task_queue failed with exception:%s" % e
+            return {'success': False, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        task_functions = CTF()
+        call_result = task_functions.createTransaction(GSB.project_id, transaction_user_uid, task_id,
+                                                       task_sequence)
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += 'failed to add task queue function'
+            return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
+        #</end> create transaction to create skill in datastore
 
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
