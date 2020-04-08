@@ -20,7 +20,7 @@ sys.path.insert(0, 'includes')
 from webapp_class_wrapper import wrap_webapp_class
 from datavalidation import DataValidation
 from GCP_return_codes import FunctionReturnCodes as RC
-from error_handling import CR as RDK
+from error_handling import RDK
 from GCP_datastore_logging import LoggingFuctions
 from p1_global_settings import GlobalSettings as GSB, PostDataRules
 from p1_services import Services as Services, TaskArguments, TaskNames
@@ -155,7 +155,7 @@ class CommonPostHandler(DataValidation, OauthVerify):
         call_result = self.VerifyToken()
         debug_data.append(call_result)
         if call_result['authenticated'] != RC.success:
-            self.response.set_status(401)
+            self.create_response(call_result)
             return
 
         call_result = self.process_request(*args, **kwargs)
