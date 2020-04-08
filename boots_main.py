@@ -703,5 +703,93 @@ class CreateSkill(CommonPostHandler):
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
 
+@app.route(Services.web_request.add_skill_to_user.url, methods=["OPTIONS", "POST"])
+@wrap_webapp_class(Services.web_request.add_skill_to_user.name)
+class AddSkillToUser(CommonPostHandler):
+    def process_request(self):
+        task_id = 'web-requests:AddSkillToUser:process_request'
+        debug_data = []
+        return_msg = task_id + ": "
+        transaction_user_uid = "1"
+
+        # input validation
+        user_uid = unicode(self.request.get(TaskArguments.s3t7_user_uid, ""))
+        skill_uid = unicode(self.request.get(TaskArguments.s3t7_skill_uid, ""))
+        special_notes = unicode(self.request.get(TaskArguments.s3t7_special_notes, "")) or None
+
+        call_result = self.ruleCheck([
+            [user_uid, PostDataRules.internal_uid],
+            [skill_uid, PostDataRules.internal_uid],
+            [special_notes, DsP1.caretaker_skills_joins._rule_special_notes],
+        ])
+
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += "input validation failed"
+            return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        user_uid = long(user_uid)
+        skill_uid = long(skill_uid)
+
+        user_key = ndb.Key(DsP1.users._get_kind(), user_uid)
+        call_result = DSF.kget(user_key)
+        if call_result['success'] != RC.success:
+            return_msg += "Failed to load user from datastore"
+            return {
+                'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        user = call_result['get_result']
+        if not user:
+            return_msg += "User doesn't exist"
+            return {
+                'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+
+        skill_key = ndb.Key(DsP1.caretaker_skills._get_kind(), skill_uid)
+        call_result = DSF.kget(skill_key)
+        if call_result['success'] != RC.success:
+            return_msg += "Failed to load skill from datastore"
+            return {
+                'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        skill = call_result['get_result']
+        if not skill:
+            return_msg += "Skill doesn't exist"
+            return {
+                'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        # </end> input validation
+
+        # create transaction to add skill to user
+        pma = {
+            TaskArguments.s2t3_user_uid: unicode(user_uid),
+            TaskArguments.s2t3_skill_uid: unicode(skill_uid),
+            TaskArguments.s2t3_special_notes: special_notes or '',
+            TaskArguments.s2t3_total_capacity: '1',
+        }
+
+        task_sequence = [{
+            'name': TaskNames.s2t3,
+            'PMA': pma,
+        }]
+
+        try:
+            task_sequence = unicode(json.JSONEncoder().encode(task_sequence))
+        except Exception as e:
+            return_msg += "JSON encoding of task_queue failed with exception:%s" % e
+            return {'success': False, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        task_functions = CTF()
+        call_result = task_functions.createTransaction(GSB.project_id, transaction_user_uid, task_id,
+                                                       task_sequence)
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += 'failed to add task queue function'
+            return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
+        #</end> create transaction to add skill to user
+
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+
+
 if __name__ == "__main__":
     app.run(debug=True)
