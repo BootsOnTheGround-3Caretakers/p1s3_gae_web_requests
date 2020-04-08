@@ -878,5 +878,92 @@ class CreateCluster(CommonPostHandler):
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
 
+@app.route(Services.web_request.add_modify_user_to_existing_cluster.url, methods=["OPTIONS", "POST"])
+@wrap_webapp_class(Services.web_request.add_modify_user_to_existing_cluster.name)
+class AddModifyUserToExistingCluster(CommonPostHandler):
+    def process_request(self):
+        task_id = 'web-requests:AddModifyUserToExistingCluster:process_request'
+        debug_data = []
+        return_msg = task_id + ": "
+        transaction_user_uid = "1"
+
+        # input validation
+        user_uid = unicode(self.request.get(TaskArguments.s3t9_user_uid, ""))
+        cluster_uid = unicode(self.request.get(TaskArguments.s3t9_cluster_uid, ""))
+        roles = unicode(self.request.get(TaskArguments.s3t9_roles, ""))
+
+        call_result = self.ruleCheck([
+            [user_uid, PostDataRules.internal_uid],
+            [cluster_uid, PostDataRules.internal_uid],
+            [roles, DsP1.cluster_joins._rule_roles],
+        ])
+
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += "input validation failed"
+            return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        user_uid = long(user_uid)
+        cluster_uid = long(cluster_uid)
+
+        user_key = ndb.Key(DsP1.users._get_kind(), user_uid)
+        call_result = DSF.kget(user_key)
+        if call_result['success'] != RC.success:
+            return_msg += "Failed to load user from datastore"
+            return {
+                'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        user = call_result['get_result']
+        if not user:
+            return_msg += "User doesn't exist"
+            return {
+                'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+
+        cluster_key = ndb.Key(DsP1.cluster._get_kind(), cluster_uid)
+        call_result = DSF.kget(cluster_key)
+        if call_result['success'] != RC.success:
+            return_msg += "Failed to load cluster from datastore"
+            return {
+                'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        cluster = call_result['get_result']
+        if not cluster:
+            return_msg += "Cluster doesn't exist"
+            return {
+                'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+        # </end> input validation
+
+        # create transaction to add/modify cluster user
+        pma = {
+            TaskArguments.s2t1_user_uid: unicode(user_uid),
+            TaskArguments.s2t1_cluster_uid: unicode(cluster_uid),
+            TaskArguments.s2t1_user_roles: roles,
+        }
+
+        task_sequence = [{
+            'name': TaskNames.s2t1,
+            'PMA': pma,
+        }]
+
+        try:
+            task_sequence = unicode(json.JSONEncoder().encode(task_sequence))
+        except Exception as e:
+            return_msg += "JSON encoding of task_queue failed with exception:%s" % e
+            return {'success': False, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        task_functions = CTF()
+        call_result = task_functions.createTransaction(GSB.project_id, transaction_user_uid, task_id,
+                                                       task_sequence)
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += 'failed to add task queue function'
+            return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
+        #</end> create transaction to add/modify cluster user
+
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+
+
 if __name__ == "__main__":
     app.run(debug=True)
