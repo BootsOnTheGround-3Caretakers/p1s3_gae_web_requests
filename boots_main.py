@@ -22,10 +22,8 @@ from datavalidation import DataValidation
 from GCP_return_codes import FunctionReturnCodes as RC
 from error_handling import CR as RDK
 from GCP_datastore_logging import LoggingFuctions
-from p1_global_settings import GlobalSettings as GSB
-from p1_services import Services as Services
-from p1_services import TaskArguments
-from p1_services import TaskNames
+from p1_global_settings import GlobalSettings as GSB, PostDataRules
+from p1_services import Services as Services, TaskArguments, TaskNames
 from p1_datastores import Datastores as DsP1
 from task_queue_functions import CreateTransactionFunctions as CTF
 from datastore_functions import DatastoreFunctions as DSF
@@ -200,7 +198,7 @@ class CreateNeed(CommonPostHandler):
         task_id = 'web-requests:CreateNeed:process_request'
         debug_data = []
         return_msg = task_id + ": "
-        user_uid = "1"
+        transaction_user_uid = "1"
 
         # input validation
         need_name = unicode(self.request.get(TaskArguments.s3t1_name, ""))
@@ -236,7 +234,7 @@ class CreateNeed(CommonPostHandler):
             return {'success': False, 'return_msg': return_msg, 'debug_data': debug_data}
 
         task_functions = CTF()
-        call_result = task_functions.createTransaction(GSB.project_id, user_uid, task_id,
+        call_result = task_functions.createTransaction(GSB.project_id, transaction_user_uid, task_id,
                                                        task_sequence)
         debug_data.append(call_result)
         if call_result['success'] != RC.success:
@@ -263,9 +261,9 @@ class AssignNeedToNeeder(CommonPostHandler):
         special_requests = unicode(self.request.get(TaskArguments.s3t2_special_requests, "")) or None
 
         call_result = self.ruleCheck([
-            [need_uid, DsP1.needer_needs_joins._rule_need_uid],
-            [needer_uid, GSB.post_data_rules.required_name],
-            [user_uid, GSB.post_data_rules.required_name],
+            [need_uid, PostDataRules.internal_uid],
+            [needer_uid, PostDataRules.internal_uid],
+            [user_uid, PostDataRules.internal_uid],
             [special_requests, DsP1.needer_needs_joins._rule_special_requests],
         ])
 
@@ -274,11 +272,15 @@ class AssignNeedToNeeder(CommonPostHandler):
             return_msg += "input validation failed"
             return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
 
+        needer_uid = long(needer_uid)
+        need_uid = long(need_uid)
+        user_uid = long(user_uid)
+
         try:
             existings_keys = [
-                ndb.Key(DsP1.needer._get_kind(), long(needer_uid)),
-                ndb.Key(DsP1.needs._get_kind(), long(need_uid)),
-                ndb.Key(DsP1.users._get_kind(), long(user_uid)),
+                ndb.Key(DsP1.needer._get_kind(), needer_uid),
+                ndb.Key(DsP1.needs._get_kind(), need_uid),
+                ndb.Key(DsP1.users._get_kind(), user_uid),
             ]
         except Exception as exc:
             return_msg += str(exc)
@@ -302,9 +304,9 @@ class AssignNeedToNeeder(CommonPostHandler):
         # </end> input validation
 
         pma = {
-            TaskArguments.s2t4_need_uid: need_uid,
-            TaskArguments.s2t4_needer_uid: needer_uid,
-            TaskArguments.s2t4_user_uid: user_uid,
+            TaskArguments.s2t4_need_uid: unicode(need_uid),
+            TaskArguments.s2t4_needer_uid: unicode(needer_uid),
+            TaskArguments.s2t4_user_uid: unicode(user_uid),
         }
         if special_requests:
             pma[TaskArguments.s2t4_special_requests] = special_requests
@@ -341,7 +343,7 @@ class CreateUser(CommonPostHandler):
         task_id = 'web-requests:CreateUser:process_request'
         debug_data = []
         return_msg = task_id + ": "
-        user_uid = "1"
+        transaction_user_uid = "1"
 
         # input validation
         first_name = unicode(self.request.get(TaskArguments.s3t3_first_name, ""))
@@ -381,7 +383,241 @@ class CreateUser(CommonPostHandler):
 
         task_functions = CTF()
         call_result = task_functions.createTransaction(
-            GSB.project_id, user_uid, task_id, task_sequence
+            GSB.project_id, transaction_user_uid, task_id, task_sequence
+        )
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += 'failed to add task queue function'
+            return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
+        ##</end> create transaction to create user in datastore
+
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+
+
+@app.route(Services.web_request.modify_user_information.url, methods=["OPTIONS", "POST"])
+@wrap_webapp_class(Services.web_request.modify_user_information.name)
+class ModifyUserInformation(CommonPostHandler):
+    def process_request(self):
+        task_id = 'web-requests:ModifyUserInformation:process_request'
+        debug_data = []
+        return_msg = task_id + ": "
+        transaction_user_uid = "1"
+
+        # input validation
+        user_uid = unicode(self.request.get(TaskArguments.s3t4_user_uid, ""))
+        first_name = unicode(self.request.get(TaskArguments.s3t4_first_name, "")) or None
+        last_name = unicode(self.request.get(TaskArguments.s3t4_last_name, "")) or None
+        phone_number = unicode(self.request.get(TaskArguments.s3t4_phone_number, "")) or None
+        phone_texts = unicode(self.request.get(TaskArguments.s3t4_phone_texts, "")) or None
+        phone_2 = unicode(self.request.get(TaskArguments.s3t4_phone_2, "")) or None
+        emergency_contact = unicode(self.request.get(TaskArguments.s3t4_emergency_contact, "")) or None
+        home_address = unicode(self.request.get(TaskArguments.s3t4_home_address, "")) or None
+        email_address = unicode(self.request.get(TaskArguments.s3t4_email_address, "")) or None
+        firebase_uid = unicode(self.request.get(TaskArguments.s3t4_firebase_uid, "")) or None
+        country_uid = unicode(self.request.get(TaskArguments.s3t4_country_uid, "")) or None
+        region_uid = unicode(self.request.get(TaskArguments.s3t4_region_uid, "")) or None
+        area_uid = unicode(self.request.get(TaskArguments.s3t4_area_uid, "")) or None
+        description = unicode(self.request.get(TaskArguments.s3t4_description, "")) or None
+        preferred_radius = unicode(self.request.get(TaskArguments.s3t4_preferred_radius, "")) or None
+        account_flags = unicode(self.request.get(TaskArguments.s3t4_account_flags, "")) or None
+        location_cord_lat = unicode(self.request.get(TaskArguments.s3t4_location_cord_lat, "")) or None
+        location_cord_long = unicode(self.request.get(TaskArguments.s3t4_location_cord_long, "")) or None
+
+        call_result = self.ruleCheck([
+            [user_uid, GSB.post_data_rules.internal_uid],
+            [first_name, GSB.post_data_rules.optional_name],
+            [last_name, GSB.post_data_rules.optional_name],
+            [phone_number, DsP1.users._rule_phone_1],
+            [phone_texts, DsP1.users._rule_phone_texts],
+            [phone_2, DsP1.users._rule_phone_2],
+            [emergency_contact, DsP1.users._rule_emergency_contact],
+            [home_address, DsP1.users._rule_home_address],
+            [firebase_uid, DsP1.users._rule_firebase_uid],
+            [country_uid, DsP1.users._rule_country_uid],
+            [region_uid, DsP1.users._rule_region_uid],
+            [area_uid, DsP1.users._rule_area_uid],
+            [description, DsP1.users._rule_description],
+            [preferred_radius, GSB.post_data_rules.internal_uid],
+            [account_flags, DsP1.users._rule_account_flags],
+            [location_cord_lat, GSB.post_data_rules.optional_name],
+            [location_cord_long, GSB.post_data_rules.optional_name],
+        ])
+
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += "input validation failed"
+            return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        user_uid = long(user_uid)
+
+        if location_cord_lat and location_cord_long:
+            try:
+                location_cord_lat = float(location_cord_lat)
+            except ValueError as exc:
+                return_msg += unicode(exc)
+                return {
+                    'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            try:
+                location_cord_long = float(location_cord_long)
+            except ValueError as exc:
+                return_msg += unicode(exc)
+                return {
+                    'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            if not ((-90 <= location_cord_lat <= 90) and (-180 <= location_cord_long <= 180)):
+                return_msg += "latitude value must be [-90, 90], longitude value must be [-180, 180]"
+                return {
+                    'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+        elif location_cord_lat or location_cord_long:
+            return_msg += "Incomplete location information. latitude: {}, longitude: {}".format(location_cord_lat, location_cord_long)
+            return {
+                'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+
+        user_key = ndb.Key(DsP1.users._get_kind(), user_uid)
+        call_result = DSF.kget(user_key)
+        if call_result['success'] != RC.success:
+            return_msg += "Failed to load user from datastore"
+            return {
+                'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+
+        if (not (email_address and firebase_uid)) and (email_address or firebase_uid):
+            return_msg += "Both email_address and firebase_uid must be specified when either one is specified."
+            return {
+                'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+
+        user = call_result['get_result']
+        if not user:
+            return_msg += "User doesn't exist"
+            return {
+                'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+
+        if phone_number and user.phone_1 != phone_number:
+            # check if there is another user having the same phone number
+            query = DsP1.users.query(DsP1.users.phone_1 == phone_number)
+            call_result = DSF.kfetch(query)
+            if call_result['success'] != RC.success:
+                return_msg += "fetch of users failed"
+                return {
+                    'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            users = call_result['fetch_result']
+            if users:
+                return_msg += "The specified phone_number has been used by another user"
+                return {
+                    'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            #</end> check if there is another user having the same phone number
+
+        if country_uid:
+            country_key = ndb.Key(DsP1.country_codes._get_kind(), country_uid)
+            call_result = DSF.kget(country_key)
+            if call_result['success'] != RC.success:
+                return_msg += "Failed to load country from datastore"
+                return {
+                    'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            country = call_result['get_result']
+            if not country:
+                if call_result['success'] != RC.success:
+                    return_msg += "Country not found"
+                    return {
+                        'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                    }
+
+        if region_uid:
+            if country_uid:
+                region_key = ndb.Key(
+                    DsP1.country_codes._get_kind(), country_uid, DsP1.region_codes._get_kind(), region_uid
+                )
+                call_result = DSF.kget(region_key)
+                if call_result['success'] != RC.success:
+                    return_msg += "Failed to load region from datastore"
+                    return {
+                        'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+                    }
+                region = call_result['get_result']
+                if not region:
+                    if call_result['success'] != RC.success:
+                        return_msg += "Region not found"
+                        return {
+                            'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                        }
+            else:
+                return_msg += "if region specified, country must also be specified"
+                return {
+                    'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+
+        if area_uid:
+            if country_uid and region_uid:
+                area_key = ndb.Key(
+                    DsP1.country_codes._get_kind(), country_uid,
+                    DsP1.region_codes._get_kind(), region_uid,
+                    DsP1.area_codes._get_kind(), area_uid,
+                )
+                call_result = DSF.kget(area_key)
+                if call_result['success'] != RC.success:
+                    return_msg += "Failed to load area from datastore"
+                    return {
+                        'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+                    }
+                area = call_result['get_result']
+                if not area:
+                    if call_result['success'] != RC.success:
+                        return_msg += "Area not found"
+                        return {
+                            'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                        }
+            else:
+                return_msg += "if area specified, both country and region must also be specified"
+                return {
+                    'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+
+        # </end> input validation
+
+        pma = {
+            TaskArguments.s2t10_user_uid: unicode(user_uid),
+            TaskArguments.s2t10_first_name: first_name or '',
+            TaskArguments.s2t10_last_name: last_name or '',
+            TaskArguments.s2t10_phone_number: phone_number or '',
+            TaskArguments.s2t10_phone_texts: phone_texts or '',
+            TaskArguments.s2t10_phone_2: phone_2 or '',
+            TaskArguments.s2t10_emergency_contact: emergency_contact or '',
+            TaskArguments.s2t10_home_address: home_address or '',
+            TaskArguments.s2t10_email_address: email_address or '',
+            TaskArguments.s2t10_firebase_uid: firebase_uid or '',
+            TaskArguments.s2t10_country_uid: country_uid or '',
+            TaskArguments.s2t10_region_uid: region_uid or '',
+            TaskArguments.s2t10_area_uid: area_uid or '',
+            TaskArguments.s2t10_description: description or '',
+            TaskArguments.s2t10_preferred_radius: preferred_radius or '',
+            TaskArguments.s2t10_account_flags: account_flags or '',
+            TaskArguments.s2t10_location_cord_lat: location_cord_lat or '',
+            TaskArguments.s2t10_location_cord_long: location_cord_long or '',
+        }
+
+        ## create transaction to create user in datastore
+        task_sequence = [{
+            'name': TaskNames.s2t10,
+            'PMA': pma,
+        }]
+
+        try:
+            task_sequence = unicode(json.JSONEncoder().encode(task_sequence))
+        except Exception as e:
+            return_msg += "JSON encoding of task_queue failed with exception:%s" % e
+            return {'success': False, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        task_functions = CTF()
+        call_result = task_functions.createTransaction(
+            GSB.project_id, transaction_user_uid, task_id, task_sequence
         )
         debug_data.append(call_result)
         if call_result['success'] != RC.success:
