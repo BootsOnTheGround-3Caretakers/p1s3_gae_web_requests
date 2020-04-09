@@ -833,6 +833,12 @@ class CreateCluster(CommonPostHandler):
                 'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
             }
 
+        if not (user.country_uid and user.region_uid and user.area_uid):
+            return_msg += "Cluster user must have country_uid, region_uid, and area_uid specified."
+            return {
+                'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+            }
+
         needer_key = ndb.Key(DsP1.needer._get_kind(), needer_uid)
         call_result = DSF.kget(needer_key)
         if call_result['success'] != RC.success:
