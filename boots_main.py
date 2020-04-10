@@ -437,7 +437,7 @@ class ModifyUserInformation(CommonPostHandler):
             [region_uid, DsP1.users._rule_region_uid],
             [area_uid, DsP1.users._rule_area_uid],
             [description, DsP1.users._rule_description],
-            [preferred_radius, GSB.post_data_rules.internal_uid],
+            [preferred_radius, GSB.post_data_rules.optional_number],
             [account_flags, DsP1.users._rule_account_flags],
             [location_cord_lat, GSB.post_data_rules.optional_name],
             [location_cord_long, GSB.post_data_rules.optional_name],
