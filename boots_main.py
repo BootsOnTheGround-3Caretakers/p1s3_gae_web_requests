@@ -23,7 +23,7 @@ from GCP_return_codes import FunctionReturnCodes as RC
 from error_handling import RDK
 from GCP_datastore_logging import LoggingFuctions
 from p1_global_settings import GlobalSettings as GSB, PostDataRules
-from p1_services import Services as Services, TaskArguments, TaskNames
+from p1_services import Services, TaskArguments, TaskNames
 from p1_datastores import Datastores as DsP1
 from task_queue_functions import CreateTransactionFunctions as CTF
 from datastore_functions import DatastoreFunctions as DSF
@@ -584,24 +584,41 @@ class ModifyUserInformation(CommonPostHandler):
 
         pma = {
             TaskArguments.s2t10_user_uid: unicode(user_uid),
-            TaskArguments.s2t10_first_name: first_name or '',
-            TaskArguments.s2t10_last_name: last_name or '',
-            TaskArguments.s2t10_phone_number: phone_number or '',
-            TaskArguments.s2t10_phone_texts: phone_texts or '',
-            TaskArguments.s2t10_phone_2: phone_2 or '',
-            TaskArguments.s2t10_emergency_contact: emergency_contact or '',
-            TaskArguments.s2t10_home_address: home_address or '',
-            TaskArguments.s2t10_email_address: email_address or '',
-            TaskArguments.s2t10_firebase_uid: firebase_uid or '',
-            TaskArguments.s2t10_country_uid: country_uid or '',
-            TaskArguments.s2t10_region_uid: region_uid or '',
-            TaskArguments.s2t10_area_uid: area_uid or '',
-            TaskArguments.s2t10_description: description or '',
-            TaskArguments.s2t10_preferred_radius: preferred_radius or '',
-            TaskArguments.s2t10_account_flags: account_flags or '',
-            TaskArguments.s2t10_location_cord_lat: location_cord_lat or '',
-            TaskArguments.s2t10_location_cord_long: location_cord_long or '',
         }
+        if first_name:
+            pma[TaskArguments.s2t10_first_name] = first_name
+        if last_name:
+            pma[TaskArguments.s2t10_last_name] = last_name
+        if phone_number:
+            pma[TaskArguments.s2t10_phone_number] = phone_number
+        if phone_texts:
+            pma[TaskArguments.s2t10_phone_texts] = phone_texts
+        if phone_2:
+            pma[TaskArguments.s2t10_phone_2] = phone_2
+        if emergency_contact:
+            pma[TaskArguments.s2t10_emergency_contact] = emergency_contact
+        if home_address:
+            pma[TaskArguments.s2t10_home_address] = home_address
+        if email_address:
+            pma[TaskArguments.s2t10_email_address] = email_address
+        if firebase_uid:
+            pma[TaskArguments.s2t10_firebase_uid] = firebase_uid
+        if country_uid:
+            pma[TaskArguments.s2t10_country_uid] = country_uid
+        if region_uid:
+            pma[TaskArguments.s2t10_region_uid] = region_uid
+        if area_uid:
+            pma[TaskArguments.s2t10_area_uid] = area_uid
+        if description:
+            pma[TaskArguments.s2t10_description] = description
+        if preferred_radius:
+            pma[TaskArguments.s2t10_preferred_radius] = unicode(preferred_radius)
+        if account_flags:
+            pma[TaskArguments.s2t10_account_flags] = account_flags
+        if location_cord_lat:
+            pma[TaskArguments.s2t10_location_cord_lat] = unicode(location_cord_lat)
+        if location_cord_long:
+            pma[TaskArguments.s2t10_location_cord_long] = unicode(location_cord_long)
 
         ## create transaction to modify user in datastore
         task_sequence = [{
@@ -676,9 +693,11 @@ class CreateSkill(CommonPostHandler):
         pma = {
             TaskArguments.s1t6_name: skill_name,
             TaskArguments.s1t6_skill_type: skill_type,
-            TaskArguments.s1t6_description: description or '',
-            TaskArguments.s1t6_certs: certifications_needed or '',
         }
+        if description:
+            pma[TaskArguments.s1t6_description] = description
+        if certifications_needed:
+            pma[TaskArguments.s1t6_certs] = certifications_needed
 
         task_sequence = [{
             'name': TaskNames.s1t6,
@@ -764,9 +783,10 @@ class AddSkillToUser(CommonPostHandler):
         pma = {
             TaskArguments.s2t3_user_uid: unicode(user_uid),
             TaskArguments.s2t3_skill_uid: unicode(skill_uid),
-            TaskArguments.s2t3_special_notes: special_notes or '',
             TaskArguments.s2t3_total_capacity: '1',
         }
+        if special_notes:
+            pma[TaskArguments.s2t3_special_notes] = special_notes
 
         task_sequence = [{
             'name': TaskNames.s2t3,
@@ -858,8 +878,9 @@ class CreateCluster(CommonPostHandler):
         pma = {
             TaskArguments.s1t5_user_uid: unicode(user_uid),
             TaskArguments.s1t5_needer_uid: unicode(needer_uid),
-            TaskArguments.s1t5_expiration_date: unicode(expiration_date) or '',
         }
+        if expiration_date:
+            pma[TaskArguments.s1t5_expiration_date] = unicode(expiration_date)
 
         task_sequence = [{
             'name': TaskNames.s1t5,
@@ -1097,8 +1118,9 @@ class AddHashtag(CommonPostHandler):
         # create transaction to add hashtag
         pma = {
             TaskArguments.s1t2_name: name,
-            TaskArguments.s1t2_description: description or '',
         }
+        if description:
+            pma[TaskArguments.s1t2_description] = description
 
         task_sequence = [{
             'name': TaskNames.s1t2,
