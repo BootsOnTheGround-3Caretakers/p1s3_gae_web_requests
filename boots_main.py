@@ -360,6 +360,25 @@ class CreateUser(CommonPostHandler):
         if call_result['success'] != RC.success:
             return_msg += "input validation failed"
             return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        if phone:
+            # check if there is another user having the same phone number
+            key = ndb.Key(DsP1.phone_numbers._get_kind(), "{}|{}".format("US", phone))
+            call_result = DSF.kget(key)
+            debug_data.append(call_result)
+            if call_result['success'] != RC.success:
+                return_msg += "failed to load phone_number from datastore"
+                return {
+                    'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            phone_entity = call_result['get_result']
+            if phone_entity:
+                return_msg += "The specified phone_number has been used by another user"
+                return {
+                    'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            #</end> check if there is another user having the same phone number
+
         # </end> input validation
 
         pma = {
@@ -499,15 +518,16 @@ class ModifyUserInformation(CommonPostHandler):
 
         if phone_number and user.phone_1 != phone_number:
             # check if there is another user having the same phone number
-            query = DsP1.users.query(DsP1.users.phone_1 == phone_number)
-            call_result = DSF.kfetch(query)
+            key = ndb.Key(DsP1.phone_numbers._get_kind(), "{}|{}".format(country_uid or "US", phone_number))
+            call_result = DSF.kget(key)
+            debug_data.append(call_result)
             if call_result['success'] != RC.success:
-                return_msg += "fetch of users failed"
+                return_msg += "failed to load phone_number from datastore"
                 return {
                     'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
                 }
-            users = call_result['fetch_result']
-            if users:
+            phone_entity = call_result['get_result']
+            if phone_entity and phone_entity.user_uid != user_uid:
                 return_msg += "The specified phone_number has been used by another user"
                 return {
                     'success': call_result['success'], 'return_msg': return_msg, 'debug_data': debug_data,
