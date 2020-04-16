@@ -441,6 +441,7 @@ class ModifyUserInformation(CommonPostHandler):
         account_flags = unicode(self.request.get(TaskArguments.s3t4_account_flags, "")) or None
         location_cord_lat = unicode(self.request.get(TaskArguments.s3t4_location_cord_lat, "")) or None
         location_cord_long = unicode(self.request.get(TaskArguments.s3t4_location_cord_long, "")) or None
+        gender = unicode(self.request.get(TaskArguments.s3t4_gender, "")) or None
 
         call_result = self.ruleCheck([
             [user_uid, GSB.post_data_rules.internal_uid],
@@ -460,6 +461,7 @@ class ModifyUserInformation(CommonPostHandler):
             [account_flags, DsP1.users._rule_account_flags],
             [location_cord_lat, GSB.post_data_rules.optional_name],
             [location_cord_long, GSB.post_data_rules.optional_name],
+            [gender, GSB.post_data_rules.optional_name],
         ])
 
         debug_data.append(call_result)
@@ -639,6 +641,8 @@ class ModifyUserInformation(CommonPostHandler):
             pma[TaskArguments.s2t10_location_cord_lat] = unicode(location_cord_lat)
         if location_cord_long:
             pma[TaskArguments.s2t10_location_cord_long] = unicode(location_cord_long)
+        if gender:
+            pma[TaskArguments.s2t10_gender] = gender
 
         ## create transaction to modify user in datastore
         task_sequence = [{
