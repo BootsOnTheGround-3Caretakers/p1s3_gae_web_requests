@@ -139,18 +139,20 @@ app.wsgi_app = ndb_wsgi_middleware(app.wsgi_app)
 
 
 class CommonPostHandler(DataValidation, OauthVerify):
-    def options(self):
+    def _set_access_control_response_headers(self):
+        self.response.headers[str('Access-Control-Allow-Origin')] = str('*')
         self.response.headers[str('Access-Control-Allow-Headers')] = str(
             'Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With')
         self.response.headers[str('Access-Control-Allow-Methods')] = str('POST')
+
+    def options(self):
+        self._set_access_control_response_headers()
 
     def post(self, *args, **kwargs):
         debug_data = []
         task_id = 'web-requests:CommonPostHandler:post'
 
-        self.response.headers[str('Access-Control-Allow-Headers')] = str(
-            'Cache-Control, Pragma, Origin, Authorization, Content-Type, X-Requested-With')
-        self.response.headers[str('Access-Control-Allow-Methods')] = str('POST')
+        self._set_access_control_response_headers()
 
         call_result = self.VerifyToken()
         debug_data.append(call_result)
