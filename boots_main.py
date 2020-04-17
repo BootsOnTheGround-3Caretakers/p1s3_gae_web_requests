@@ -1237,5 +1237,117 @@ class CreateNeederRequest(CommonPostHandler):
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
 
+@app.route(Services.web_request.assign_user_hashtag.url, methods=["OPTIONS", "POST"])
+@wrap_webapp_class(Services.web_request.assign_user_hashtag.name)
+class AssignUserHashtag(CommonPostHandler):
+    def process_request(self):
+        task_id = 'web-requests:AssignUserHashtag:process_request'
+        debug_data = []
+        return_msg = task_id + ": "
+        transaction_user_uid = "1"
+
+        # input validation
+        user_uid = unicode(self.request.get(TaskArguments.s3t13_user_uid, ""))
+        hashtag_uid = unicode(self.request.get(TaskArguments.s3t13_hashtag_uid, ""))
+
+        call_result = self.ruleCheck([
+            [user_uid, PostDataRules.internal_uid],
+            [hashtag_uid, PostDataRules.internal_uid],
+        ])
+
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += "input validation failed"
+            return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        user_uid = long(user_uid)
+        hashtag_uid = long(hashtag_uid)
+        # </end> input validation
+
+        # create transaction to assign hashtag to user
+        pma = {
+            TaskArguments.s2t7_user_uid: unicode(user_uid),
+            TaskArguments.s2t7_hashtag_uid: unicode(hashtag_uid),
+        }
+
+        task_sequence = [{
+            'name': TaskNames.s2t7,
+            'PMA': pma,
+        }]
+
+        try:
+            task_sequence = unicode(json.JSONEncoder().encode(task_sequence))
+        except Exception as e:
+            return_msg += "JSON encoding of task_queue failed with exception:%s" % e
+            return {'success': False, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        task_functions = CTF()
+        call_result = task_functions.createTransaction(GSB.project_id, transaction_user_uid, task_id,
+                                                       task_sequence)
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += 'failed to add task queue function'
+            return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
+        #</end> create transaction to assign hashtag to user
+
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+
+
+@app.route(Services.web_request.remove_user_hashtag.url, methods=["OPTIONS", "POST"])
+@wrap_webapp_class(Services.web_request.remove_user_hashtag.name)
+class RemoveUserHashtag(CommonPostHandler):
+    def process_request(self):
+        task_id = 'web-requests:RemoveUserHashtag:process_request'
+        debug_data = []
+        return_msg = task_id + ": "
+        transaction_user_uid = "1"
+
+        # input validation
+        user_uid = unicode(self.request.get(TaskArguments.s3t14_user_uid, ""))
+        hashtag_uid = unicode(self.request.get(TaskArguments.s3t14_hashtag_uid, ""))
+
+        call_result = self.ruleCheck([
+            [user_uid, PostDataRules.internal_uid],
+            [hashtag_uid, PostDataRules.internal_uid],
+        ])
+
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += "input validation failed"
+            return {'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        user_uid = long(user_uid)
+        hashtag_uid = long(hashtag_uid)
+        # </end> input validation
+
+        # create transaction to remove hashtag from user
+        pma = {
+            TaskArguments.s2t8_user_uid: unicode(user_uid),
+            TaskArguments.s2t8_hashtag_uid: unicode(hashtag_uid),
+        }
+
+        task_sequence = [{
+            'name': TaskNames.s2t8,
+            'PMA': pma,
+        }]
+
+        try:
+            task_sequence = unicode(json.JSONEncoder().encode(task_sequence))
+        except Exception as e:
+            return_msg += "JSON encoding of task_queue failed with exception:%s" % e
+            return {'success': False, 'return_msg': return_msg, 'debug_data': debug_data}
+
+        task_functions = CTF()
+        call_result = task_functions.createTransaction(GSB.project_id, transaction_user_uid, task_id,
+                                                       task_sequence)
+        debug_data.append(call_result)
+        if call_result['success'] != RC.success:
+            return_msg += 'failed to add task queue function'
+            return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
+        #</end> create transaction to remove hashtag from user
+
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+
+
 if __name__ == "__main__":
     app.run(debug=True)
