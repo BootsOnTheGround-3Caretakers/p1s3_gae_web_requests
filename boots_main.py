@@ -1211,7 +1211,7 @@ class CreateNeederRequest(CommonPostHandler):
 
         # create transaction to create needer
         pma = {
-            TaskArguments.s1t3_user_uid: user_uid,
+            TaskArguments.s1t3_user_uid: unicode(user_uid),
         }
 
         task_sequence = [{
