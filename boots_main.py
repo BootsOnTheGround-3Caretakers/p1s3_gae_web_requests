@@ -244,7 +244,7 @@ class CreateNeed(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         ##</end> create transaction to create need in datastore
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.assign_need_to_needer.url, methods=["OPTIONS", "POST"])
@@ -335,7 +335,7 @@ class AssignNeedToNeeder(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         ##</end> create transaction to assign need in datastore
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.create_user.url, methods=["OPTIONS", "POST"])
@@ -412,7 +412,7 @@ class CreateUser(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         ##</end> create transaction to create user in datastore
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.modify_user_information.url, methods=["OPTIONS", "POST"])
@@ -668,7 +668,7 @@ class ModifyUserInformation(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         ##</end> create transaction to modify user in datastore
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.create_skill.url, methods=["OPTIONS", "POST"])
@@ -745,7 +745,7 @@ class CreateSkill(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to create skill in datastore
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.add_skill_to_user.url, methods=["OPTIONS", "POST"])
@@ -834,7 +834,7 @@ class AddSkillToUser(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to add skill to user
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.create_cluster.url, methods=["OPTIONS", "POST"])
@@ -928,7 +928,7 @@ class CreateCluster(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to create cluster
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.add_modify_user_to_existing_cluster.url, methods=["OPTIONS", "POST"])
@@ -1015,7 +1015,7 @@ class AddModifyUserToExistingCluster(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to add/modify cluster user
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.remove_user_from_cluster.url, methods=["OPTIONS", "POST"])
@@ -1099,7 +1099,7 @@ class RemoveUserFromCluster(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to remove user from cluster
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.add_hashtag.url, methods=["OPTIONS", "POST"])
@@ -1168,7 +1168,7 @@ class AddHashtag(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to add hashtag
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.create_needer_request.url, methods=["OPTIONS", "POST"])
@@ -1234,7 +1234,7 @@ class CreateNeederRequest(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to create needer
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.assign_user_hashtag.url, methods=["OPTIONS", "POST"])
@@ -1290,7 +1290,7 @@ class AssignUserHashtag(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to assign hashtag to user
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 @app.route(Services.web_request.remove_user_hashtag.url, methods=["OPTIONS", "POST"])
@@ -1346,7 +1346,7 @@ class RemoveUserHashtag(CommonPostHandler):
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
         #</end> create transaction to remove hashtag from user
 
-        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
+        return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data, 'success_data': call_result}
 
 
 if __name__ == "__main__":
