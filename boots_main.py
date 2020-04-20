@@ -553,6 +553,7 @@ class ModifyUserInformation(CommonPostHandler):
                     return {
                         'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
                     }
+        country_uid = country_uid or user.country_uid
 
         if region_uid:
             if country_uid:
@@ -577,6 +578,7 @@ class ModifyUserInformation(CommonPostHandler):
                 return {
                     'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
                 }
+        region_uid = region_uid or user.region_uid
 
         if area_uid:
             if country_uid and region_uid:
@@ -603,6 +605,7 @@ class ModifyUserInformation(CommonPostHandler):
                 return {
                     'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
                 }
+        area_uid = area_uid or user.area_uid
 
         # </end> input validation
 
