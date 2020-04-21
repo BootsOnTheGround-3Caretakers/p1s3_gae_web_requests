@@ -1174,9 +1174,9 @@ class AddHashtag(CommonPostHandler):
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
 
-@app.route(Services.web_request.create_needer_request.url, methods=["OPTIONS", "POST"])
-@wrap_webapp_class(Services.web_request.create_needer_request.name)
-class CreateNeederRequest(CommonPostHandler):
+@app.route(Services.web_request.create_modify_needer_request.url, methods=["OPTIONS", "POST"])
+@wrap_webapp_class(Services.web_request.create_modify_needer_request.name)
+class CreateModifyNeederRequest(CommonPostHandler):
     def process_request(self):
         task_id = 'web-requests:CreateNeederRequest:process_request'
         debug_data = []
@@ -1185,9 +1185,15 @@ class CreateNeederRequest(CommonPostHandler):
 
         # input validation
         user_uid = unicode(self.request.get(TaskArguments.s3t12_user_uid, ""))
+        needer_uid = unicode(self.request.get(TaskArguments.s3t12_needer_uid, "")) or None
+        private_metadata = unicode(self.request.get(TaskArguments.s3t12_private_metadata, "")) or None
+        public_metadata = unicode(self.request.get(TaskArguments.s3t12_public_metadata, "")) or None
 
         call_result = self.ruleCheck([
             [user_uid, PostDataRules.internal_uid],
+            [needer_uid, PostDataRules.optional_uid],
+            [private_metadata, DsP1.needer._rule_private_metadata_blob],
+            [public_metadata, DsP1.needer._rule_public_metadata_blob],
         ])
 
         debug_data.append(call_result)
@@ -1210,12 +1216,34 @@ class CreateNeederRequest(CommonPostHandler):
             return {
                 'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
             }
+
+        if needer_uid:
+            needer_uid = long(needer_uid)
+            needer_key = ndb.Key(DsP1.users._get_kind(), user_uid, DsP1.needer._get_kind(), needer_uid)
+            call_result = DSF.kget(needer_key)
+            if call_result['success'] != RC.success:
+                return_msg += "Failed to load needer from datastore"
+                return {
+                    'success': RC.datastore_failure, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
+            needer = call_result['get_result']
+            if not needer:
+                return_msg += "Needer doesn't exist"
+                return {
+                    'success': RC.input_validation_failed, 'return_msg': return_msg, 'debug_data': debug_data,
+                }
         # </end> input validation
 
         # create transaction to create needer
         pma = {
             TaskArguments.s1t3_user_uid: unicode(user_uid),
         }
+        if needer_uid:
+            pma[TaskArguments.s1t3_needer_uid] = unicode(needer_uid)
+        if private_metadata:
+            pma[TaskArguments.s1t3_private_metadata] = private_metadata
+        if public_metadata:
+            pma[TaskArguments.s1t3_public_metadata] = public_metadata
 
         task_sequence = [{
             'name': TaskNames.s1t3,
