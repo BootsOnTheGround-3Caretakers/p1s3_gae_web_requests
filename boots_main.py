@@ -1178,7 +1178,7 @@ class AddHashtag(CommonPostHandler):
 @wrap_webapp_class(Services.web_request.create_modify_needer_request.name)
 class CreateModifyNeederRequest(CommonPostHandler):
     def process_request(self):
-        task_id = 'web-requests:CreateNeederRequest:process_request'
+        task_id = 'web-requests:CreateModifyNeederRequest:process_request'
         debug_data = []
         return_msg = task_id + ": "
         transaction_user_uid = "1"
@@ -1234,19 +1234,29 @@ class CreateModifyNeederRequest(CommonPostHandler):
                 }
         # </end> input validation
 
-        # create transaction to create needer
-        pma = {
-            TaskArguments.s1t3_user_uid: unicode(user_uid),
-        }
+        # create transaction to create or modify needer
         if needer_uid:
-            pma[TaskArguments.s1t3_needer_uid] = unicode(needer_uid)
-        if private_metadata:
-            pma[TaskArguments.s1t3_private_metadata] = private_metadata
-        if public_metadata:
-            pma[TaskArguments.s1t3_public_metadata] = public_metadata
+            task_name = TaskNames.s2t12
+            pma = {
+                TaskArguments.s2t12_user_uid: unicode(user_uid),
+                TaskArguments.s2t12_needer_uid: unicode(needer_uid),
+            }
+            if private_metadata:
+                pma[TaskArguments.s2t12_private_metadata] = private_metadata
+            if public_metadata:
+                pma[TaskArguments.s2t12_public_metadata] = public_metadata
+        else:
+            task_name = TaskNames.s1t3
+            pma = {
+                TaskArguments.s1t3_user_uid: unicode(user_uid),
+            }
+            if private_metadata:
+                pma[TaskArguments.s1t3_private_metadata] = private_metadata
+            if public_metadata:
+                pma[TaskArguments.s1t3_public_metadata] = public_metadata
 
         task_sequence = [{
-            'name': TaskNames.s1t3,
+            'name': task_name,
             'PMA': pma,
         }]
 
@@ -1263,7 +1273,7 @@ class CreateModifyNeederRequest(CommonPostHandler):
         if call_result['success'] != RC.success:
             return_msg += 'failed to add task queue function'
             return {'success': call_result['success'], 'debug_data': debug_data, 'return_msg': return_msg}
-        #</end> create transaction to create needer
+        #</end> create transaction to create or modify needer
 
         return {'success': RC.success, 'return_msg': return_msg, 'debug_data': debug_data}
 
